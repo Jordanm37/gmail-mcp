@@ -135,6 +135,9 @@ pnpm i && pnpm build
 - `list_messages`: List messages with optional filtering
 - `get_message`: Get a specific message
 - `get_attachment`: Get a message attachment
+- `list_attachments`: List all attachments in a message with metadata
+- `download_attachment`: Download a specific attachment with intelligent safety checks
+- `download_all_attachments`: Download all attachments with automatic sender verification
 - `modify_message`: Modify message labels
 - `send_message`: Send an email message to specified recipients
 - `delete_message`: Permanently delete a message
@@ -142,6 +145,65 @@ pnpm i && pnpm build
 - `untrash_message`: Remove message from trash
 - `batch_modify_messages`: Modify multiple messages
 - `batch_delete_messages`: Delete multiple messages
+
+#### Attachment Download Safety Features
+
+The attachment download tools include built-in security features and automatic content extraction:
+
+**Automatic Sender Verification:**
+- Checks if sender is in your contacts
+- Verifies if you've emailed them before
+- Confirms if you've received emails from them previously
+- Caches results for 1 hour to improve performance
+
+**File Type Safety:**
+- Detects potentially dangerous file extensions (.exe, .bat, .sh, .dmg, etc.)
+- Identifies double extension attacks (.pdf.exe)
+- Quarantines suspicious files automatically
+
+**Automatic Content Extraction:**
+- Extracts text from downloaded files based on type
+- Supported formats:
+  - **PDF** (.pdf) - Full text extraction (dynamically loaded)
+  - **Word Documents** (.docx) - Text extraction
+  - **Excel Spreadsheets** (.xlsx, .xls) - CSV format per sheet
+  - **Text Files** (.txt, .md) - Direct read
+  - **HTML Files** (.html) - Tag-stripped text
+  - **JSON/CSV** (.json, .csv) - Structured data
+- No additional tool call needed - just set `extractContent: true`
+- Returns both file AND extracted text in one response
+- Parsing libraries are loaded on-demand for performance
+
+**Safety Modes:**
+- `auto` (default): Smart quarantine based on sender trust and file type
+- `strict`: Always quarantine all attachments
+- `off`: Disable safety checks for trusted sources
+
+**Example Usage:**
+```javascript
+// Auto-mode (default) - Smart safety
+download_attachment(messageId, attachmentId, "~/Downloads")
+// Unknown sender → ~/Downloads/quarantine/
+// Known sender → ~/Downloads/
+
+// Download and extract content automatically
+download_attachment(messageId, attachmentId, "~/Downloads", {
+  extractContent: true
+})
+// Returns file path AND extracted text from .docx, .pdf, .xlsx, etc.
+
+// Maximum security with content extraction
+download_attachment(messageId, attachmentId, "~/Downloads", {
+  safetyCheck: "strict",
+  extractContent: true
+})
+
+// Batch download with automatic extraction
+download_all_attachments(messageId, "~/Downloads", {
+  extractContent: true
+})
+// Extracts text from all supported file types automatically
+```
 
 ### Label Management
 - `list_labels`: List all labels
